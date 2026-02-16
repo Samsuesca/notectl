@@ -1,11 +1,7 @@
-use chrono::{Local, TimeZone};
 use rusqlite::{params, Connection, Result as SqlResult};
 
 use crate::note::Note;
-
-fn timestamp_to_local(ts: i64) -> chrono::DateTime<Local> {
-    Local.timestamp_opt(ts, 0).single().unwrap_or_else(Local::now)
-}
+use crate::utils::timestamp_to_local;
 
 pub fn search_notes(
     conn: &Connection,
@@ -49,6 +45,7 @@ pub fn search_notes(
     })?;
 
     let mut notes = Vec::new();
+    let mut tag_stmt = conn.prepare("SELECT tag FROM tags WHERE note_id = ?1")?;
     for row in rows {
         let (id, content, created_at, updated_at, category, is_daily) = row?;
 
@@ -60,7 +57,6 @@ pub fn search_notes(
             }
         }
 
-        let mut tag_stmt = conn.prepare("SELECT tag FROM tags WHERE note_id = ?1")?;
         let tags: Vec<String> = tag_stmt
             .query_map(params![id], |row| row.get(0))?
             .collect::<SqlResult<Vec<String>>>()?;
@@ -100,10 +96,10 @@ fn search_by_tag(conn: &Connection, tag: &str) -> SqlResult<Vec<Note>> {
     })?;
 
     let mut notes = Vec::new();
+    let mut tag_stmt = conn.prepare("SELECT tag FROM tags WHERE note_id = ?1")?;
     for row in rows {
         let (id, content, created_at, updated_at, category, is_daily) = row?;
 
-        let mut tag_stmt = conn.prepare("SELECT tag FROM tags WHERE note_id = ?1")?;
         let tags: Vec<String> = tag_stmt
             .query_map(params![id], |row| row.get(0))?
             .collect::<SqlResult<Vec<String>>>()?;

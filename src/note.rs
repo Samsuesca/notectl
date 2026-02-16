@@ -1,6 +1,8 @@
-use chrono::{DateTime, Local, TimeZone};
+use chrono::{DateTime, Local};
 use rusqlite::{params, Connection, Result as SqlResult};
 use serde::Serialize;
+
+use crate::utils::timestamp_to_local;
 
 #[derive(Debug, Serialize)]
 pub struct Note {
@@ -11,10 +13,6 @@ pub struct Note {
     pub category: Option<String>,
     pub is_daily: bool,
     pub tags: Vec<String>,
-}
-
-fn timestamp_to_local(ts: i64) -> DateTime<Local> {
-    Local.timestamp_opt(ts, 0).single().unwrap_or_else(Local::now)
 }
 
 pub fn add(

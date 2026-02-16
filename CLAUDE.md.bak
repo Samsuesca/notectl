@@ -1,0 +1,59 @@
+# notectl - Quick note-taking from terminal
+
+> macOS command-line utility (Rust)
+
+## Project Overview
+
+**Type:** Command-line utility (Rust)
+**Purpose:** Quick note-taking from terminal
+**Platform:** macOS (Apple Silicon & Intel)
+
+## Features
+
+- Rapid note creation
+- Tag-based organization
+- Full-text search
+- Note listing and filtering
+- Export to Markdown
+- Sync with cloud storage
+
+## Development
+
+```bash
+# Build
+cargo build
+
+# Run
+cargo run -- [ARGS]
+
+# Test
+cargo test
+
+# Format and lint
+cargo fmt
+cargo clippy
+
+# Build release
+cargo build --release
+```
+
+## Installation
+
+```bash
+# Install locally
+cargo install --path .
+
+# Build and copy to system
+cargo build --release
+cp target/release/notectl /usr/local/bin/
+```
+
+## Usage
+
+```bash
+# Show help
+notectl --help
+
+# Show version
+notectl --version
+```

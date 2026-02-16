@@ -6,6 +6,7 @@ mod search;
 mod tags;
 mod template;
 mod todo;
+pub mod utils;
 
 use clap::{Parser, Subcommand};
 use std::fs;
@@ -14,7 +15,16 @@ use std::process::Command;
 
 /// Lightning-fast note-taking and task management CLI
 #[derive(Parser)]
-#[command(name = "notectl", version, about, long_about = None)]
+#[command(name = "notectl", version, about, long_about = None, after_help = "\
+Quick start:
+  notectl add \"My first note\" --tags work,meeting
+  notectl list --today
+  notectl search \"meeting notes\"
+  notectl todo add \"Review PR\" --priority high --due 2026-03-01
+  notectl tags
+  notectl daily
+  notectl export --format markdown --output notes.md
+")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -23,6 +33,16 @@ struct Cli {
 #[derive(Subcommand)]
 enum Commands {
     /// Add a new note
+    #[command(long_about = "\
+Add a new note with optional tags and category.
+Content can be provided as a positional argument or piped via stdin.
+
+Examples:
+  notectl add \"Quick meeting note\"
+  notectl add \"Project idea\" --tags work,ideas --category projects
+  echo \"Piped content\" | notectl add --stdin
+  notectl add \"Shopping list\" --tags personal
+  notectl add \"Bug report: login fails on Safari\" --tags bugs,frontend --category engineering")]
     Add {
         /// Note content (omit to use stdin with --stdin)
         content: Option<String>,
@@ -41,6 +61,16 @@ enum Commands {
     },
 
     /// List recent notes
+    #[command(long_about = "\
+List recent notes with optional filters for date, tag, and category.
+By default shows the 10 most recent notes.
+
+Examples:
+  notectl list
+  notectl list --today
+  notectl list --tag work --limit 20
+  notectl list --category projects
+  notectl list --tag meeting --today")]
     List {
         /// Show only today's notes
         #[arg(long)]
@@ -60,6 +90,16 @@ enum Commands {
     },
 
     /// Search notes by keyword
+    #[command(long_about = "\
+Search notes using full-text search (FTS5) or filter by tag.
+Multiple search terms are combined with AND logic.
+
+Examples:
+  notectl search meeting
+  notectl search \"project update\" --full
+  notectl search --tag work
+  notectl search API design --case-sensitive
+  notectl search deploy production --full")]
     Search {
         /// Search terms
         terms: Vec<String>,
@@ -78,30 +118,72 @@ enum Commands {
     },
 
     /// Show or edit a specific note
+    #[command(long_about = "\
+Display the full content of a note by its ID, including metadata.
+
+Examples:
+  notectl show 1
+  notectl show 42
+  notectl show 7")]
     Show {
         /// Note ID
         id: i64,
     },
 
     /// Edit a note's content
+    #[command(long_about = "\
+Open a note in your $EDITOR for editing. The note content is loaded
+into a temporary file, and saved back after the editor exits.
+
+Examples:
+  notectl edit 1
+  notectl edit 42
+  EDITOR=nano notectl edit 5")]
     Edit {
         /// Note ID
         id: i64,
     },
 
     /// Delete a note
+    #[command(long_about = "\
+Permanently delete a note and its associated tags and FTS index entry.
+
+Examples:
+  notectl delete 1
+  notectl delete 42
+  notectl delete 99")]
     Delete {
         /// Note ID
         id: i64,
     },
 
     /// Manage TODOs
+    #[command(long_about = "\
+Create, list, complete, and delete TODO items with priorities and due dates.
+TODOs are sorted by priority (high > medium > low) then by due date.
+
+Examples:
+  notectl todo add \"Review PR\" --priority high --due 2026-03-01
+  notectl todo list
+  notectl todo list --pending
+  notectl todo done 3
+  notectl todo delete 5")]
     Todo {
         #[command(subcommand)]
         action: TodoAction,
     },
 
     /// Open or show daily note
+    #[command(long_about = "\
+Create or edit a daily note for today (or a specific date) using your $EDITOR.
+Daily notes include a structured template with Tasks, Notes, and Ideas sections.
+
+Examples:
+  notectl daily
+  notectl daily --show
+  notectl daily --date yesterday
+  notectl daily --date 2026-02-14
+  notectl daily --date yesterday --show")]
     Daily {
         /// Show the daily note instead of opening editor
         #[arg(long)]
@@ -113,6 +195,15 @@ enum Commands {
     },
 
     /// Manage tags
+    #[command(long_about = "\
+List all tags with note counts, show notes for a specific tag, or rename tags.
+Without arguments, displays all tags sorted by frequency.
+
+Examples:
+  notectl tags
+  notectl tags --show work
+  notectl tags rename old-name new-name
+  notectl tags --show daily")]
     Tags {
         /// Show notes for a specific tag
         #[arg(long)]
@@ -123,12 +214,30 @@ enum Commands {
     },
 
     /// Manage templates
+    #[command(long_about = "\
+Create, list, edit, and delete reusable note templates.
+Templates support variables like {title}, {date}, {time}, and {datetime}.
+
+Examples:
+  notectl template create standup --editor
+  notectl template create bug --content \"## Bug Report\\n\\n**Steps**: ...\"
+  notectl template list
+  notectl template edit standup
+  notectl template delete old-template")]
     Template {
         #[command(subcommand)]
         action: TemplateAction,
     },
 
     /// Create a new note from template
+    #[command(long_about = "\
+Generate a new note from a saved template. Opens your $EDITOR with the
+rendered template for further editing before saving.
+
+Examples:
+  notectl new --template standup
+  notectl new --template meeting --title \"Q1 Planning\"
+  notectl new --template bug --title \"Login page crash\"")]
     New {
         /// Template name to use
         #[arg(long)]
@@ -140,6 +249,16 @@ enum Commands {
     },
 
     /// Export notes
+    #[command(long_about = "\
+Export notes to markdown or JSON format, with optional filters.
+Output goes to stdout by default, or to a file with --output.
+
+Examples:
+  notectl export
+  notectl export --format json --output backup.json
+  notectl export --format markdown --output notes.md
+  notectl export --tag work --from 2026-01-01 --to 2026-01-31
+  notectl export --format json --tag meeting --output meetings.json")]
     Export {
         /// Output format: markdown, json
         #[arg(long, default_value = "markdown")]
@@ -163,6 +282,13 @@ enum Commands {
     },
 
     /// Show note statistics
+    #[command(long_about = "\
+Display statistics about your notes, TODOs, and tags.
+Shows total counts, today's activity, and optionally top tags.
+
+Examples:
+  notectl stats
+  notectl stats --tags")]
     Stats {
         /// Show tag frequency
         #[arg(long)]

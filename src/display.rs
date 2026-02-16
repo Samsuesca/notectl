@@ -251,8 +251,10 @@ pub fn print_error(msg: &str) {
 }
 
 fn truncate(s: &str, max: usize) -> String {
-    if s.len() > max {
-        format!("{}...", &s[..max])
+    let char_count = s.chars().count();
+    if char_count > max {
+        let truncated: String = s.chars().take(max).collect();
+        format!("{}...", truncated)
     } else {
         s.to_string()
     }

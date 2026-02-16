@@ -1,0 +1,42 @@
+{
+  "name": "notectl",
+  "version": "1.0.1",
+  "previous_versions": ["0.1.0"],
+  "edition": "2021",
+  "target": "aarch64-apple-darwin",
+  "repository": "https://github.com/Samsuesca/notectl",
+  "author": "Angel Samuel Suesca Rios <suescapsam@gmail.com>",
+  "build": {
+    "lto": true,
+    "strip": true,
+    "opt_level": 3,
+    "codegen_units": 1,
+    "panic": "abort",
+    "binary_size": "2.6 MB"
+  },
+  "platform": {
+    "primary": "macOS (Apple Silicon M3)",
+    "supported": ["macOS", "Linux", "Windows"]
+  },
+  "features": [
+    "Quick note capture with tags",
+    "Full-text search with FTS5",
+    "TODO management with priorities and due dates",
+    "Daily notes with auto-templates",
+    "Template system with variable substitution",
+    "Export to JSON and Markdown",
+    "Tag management and statistics"
+  ],
+  "changelog": {
+    "1.0.1": [
+      "Added full release profile (LTO, strip, codegen-units=1, panic=abort)",
+      "Updated tabled 0.15->0.17, rusqlite 0.31->0.32, dirs 5->6",
+      "Added anyhow for consistent error handling",
+      "Unified timestamp_to_local() into shared utils module",
+      "Fixed prepared statement reuse in search loop",
+      "Fixed Unicode-safe string truncation in display",
+      "Added comprehensive help text with examples",
+      "Added versions.json for version tracking"
+    ]
+  }
+}

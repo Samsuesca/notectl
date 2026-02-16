@@ -1,6 +1,6 @@
 [package]
 name = "notectl"
-version = "0.1.0"
+version = "1.0.1"
 edition = "2021"
 authors = ["Angel Samuel Suesca Ríos <suescapsam@gmail.com>"]
 description = "Lightning-fast note-taking and task management CLI"
@@ -13,11 +13,19 @@ path = "src/main.rs"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
-rusqlite = { version = "0.31", features = ["bundled", "functions"] }
+rusqlite = { version = "0.32", features = ["bundled", "functions"] }
 chrono = { version = "0.4", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 colored = "2"
-tabled = "0.15"
-dirs = "5"
+tabled = "0.17"
+dirs = "6"
 toml = "0.8"
+anyhow = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"

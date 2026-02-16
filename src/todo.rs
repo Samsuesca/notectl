@@ -1,6 +1,8 @@
-use chrono::{DateTime, Local, NaiveDate, TimeZone};
+use chrono::{DateTime, Local, NaiveDate};
 use rusqlite::{params, Connection, Result as SqlResult};
 use serde::Serialize;
+
+use crate::utils::timestamp_to_local;
 
 #[derive(Debug, Serialize)]
 pub struct Todo {
@@ -10,10 +12,6 @@ pub struct Todo {
     pub priority: String,
     pub due_date: Option<DateTime<Local>>,
     pub created_at: DateTime<Local>,
-}
-
-fn timestamp_to_local(ts: i64) -> DateTime<Local> {
-    Local.timestamp_opt(ts, 0).single().unwrap_or_else(Local::now)
 }
 
 pub fn add(

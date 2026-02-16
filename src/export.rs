@@ -1,8 +1,9 @@
-use chrono::{Local, TimeZone};
+use chrono::Local;
 use rusqlite::{params, Connection, Result as SqlResult};
 use serde::Serialize;
 
 use crate::note::Note;
+use crate::utils::timestamp_to_local;
 
 #[derive(Serialize)]
 struct ExportNote {
@@ -12,10 +13,6 @@ struct ExportNote {
     updated_at: String,
     category: Option<String>,
     tags: Vec<String>,
-}
-
-fn timestamp_to_local(ts: i64) -> chrono::DateTime<Local> {
-    Local.timestamp_opt(ts, 0).single().unwrap_or_else(Local::now)
 }
 
 pub fn export_notes(
@@ -105,10 +102,10 @@ fn fetch_export_notes(
     })?;
 
     let mut notes = Vec::new();
+    let mut tag_stmt = conn.prepare("SELECT tag FROM tags WHERE note_id = ?1")?;
     for row in rows {
         let (id, content, created_at, updated_at, category, is_daily) = row?;
 
-        let mut tag_stmt = conn.prepare("SELECT tag FROM tags WHERE note_id = ?1")?;
         let tags: Vec<String> = tag_stmt
             .query_map(params![id], |r| r.get(0))?
             .collect::<SqlResult<Vec<String>>>()?;
